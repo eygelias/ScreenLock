@@ -91,6 +91,8 @@ user32.SetSystemCursor.argtypes = [wt.HICON, wt.DWORD]
 user32.SetSystemCursor.restype = wt.BOOL
 user32.SystemParametersInfoW.argtypes = [wt.UINT, wt.UINT, ctypes.c_void_p, wt.UINT]
 user32.SystemParametersInfoW.restype = wt.BOOL
+gdi32.DeleteObject.argtypes = [wt.HANDLE]
+gdi32.DeleteObject.restype = wt.BOOL
 
 IDC_ARROW = wt.LPCWSTR(32512)
 OCR_NORMAL = 32512
@@ -192,8 +194,10 @@ def kb_proc(nCode, wParam, lParam):
                     else:
                         state['progress'] = 0
                 return -1
-    except Exception:
-        pass
+    except Exception as e:
+        import traceback
+        with open(os.path.join(app_dir, 'error.log'), 'a') as f:
+            f.write("kb_proc: " + traceback.format_exc() + '\n')
 
     return user32.CallNextHookEx(kb_hook, nCode, wParam, lParam)
 
@@ -380,8 +384,7 @@ def run_gui():
             return
             
         try:
-            env = os.environ.copy()
-            env.pop('_MEIPASS2', None)
+            env = {k: v for k, v in os.environ.items() if not k.startswith('_MEI') and not k.startswith('_PYI')}
             
             # DETACHED_PROCESS | CREATE_NO_WINDOW
             cflags = 0x00000008 | 0x08000000
