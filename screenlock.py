@@ -369,11 +369,14 @@ def run_gui():
             env = os.environ.copy()
             env.pop('_MEIPASS2', None)
             
+            # DETACHED_PROCESS | CREATE_NO_WINDOW
+            cflags = 0x00000008 | 0x08000000
+            
             if getattr(sys, 'frozen', False):
-                subprocess.Popen([sys.executable, "--hidden"], env=env, creationflags=subprocess.CREATE_NO_WINDOW, close_fds=True)
+                subprocess.Popen([sys.executable, "--hidden"], env=env, creationflags=cflags, close_fds=True, stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, cwd=os.path.dirname(sys.executable))
             else:
                 python_exe = sys.executable.replace('python.exe', 'pythonw.exe')
-                subprocess.Popen([python_exe, sys.argv[0], "--hidden"], env=env, creationflags=subprocess.CREATE_NO_WINDOW, close_fds=True)
+                subprocess.Popen([python_exe, sys.argv[0], "--hidden"], env=env, creationflags=cflags, close_fds=True, stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, cwd=os.path.dirname(sys.executable))
             
             root.after(1000, update_status)
         except Exception as e:
