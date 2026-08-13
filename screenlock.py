@@ -123,8 +123,13 @@ def hide_cursor():
     info.hbmMask = mask
     info.hbmColor = color
     inv = user32.CreateIconIndirect(ctypes.byref(info))
+    
+    # CreateIconIndirect makes a copy of the bitmaps, we can delete them now.
+    gdi32.DeleteObject(mask)
+    gdi32.DeleteObject(color)
+    
     user32.SetSystemCursor(inv, OCR_NORMAL)
-    user32.DestroyIcon(inv)
+    # DO NOT DestroyIcon(inv) here. SetSystemCursor takes ownership and destroys it later.
 
 def show_cursor():
     user32.SystemParametersInfoW(SPI_SETCURSORS, 0, None, 0)
@@ -168,41 +173,50 @@ def release_mods():
 
 # ── Hooks ────────────────────────────────────────────────────────────────────
 def kb_proc(nCode, wParam, lParam):
-    if nCode == HC_ACTION and wParam in (WM_KEYDOWN, WM_SYSKEYDOWN):
-        vk = lParam.contents.vkCode
+    try:
+        if nCode == HC_ACTION and wParam in (WM_KEYDOWN, WM_SYSKEYDOWN):
+            vk = lParam.contents.vkCode
 
-        if state['hotkey_vk'] and vk == state['hotkey_vk'] and get_mod_flags() == state['hotkey_mods']:
-            toggle_lock()
-            return -1
+            if state['hotkey_vk'] and vk == state['hotkey_vk'] and get_mod_flags() == state['hotkey_mods']:
+                toggle_lock()
+                return -1
 
-        if state['locked']:
-            ch = vk_to_char(vk)
-            if ch and state['progress'] < len(state['password']):
-                if ch == state['password'][state['progress']]:
-                    state['progress'] += 1
-                    play_sound('key')
-                    if state['progress'] >= len(state['password']):
-                        toggle_lock()
-                else:
-                    state['progress'] = 0
-            return -1
+            if state['locked']:
+                ch = vk_to_char(vk)
+                if ch and state['progress'] < len(state['password']):
+                    if ch == state['password'][state['progress']]:
+                        state['progress'] += 1
+                        play_sound('key')
+                        if state['progress'] >= len(state['password']):
+                            toggle_lock()
+                    else:
+                        state['progress'] = 0
+                return -1
+    except Exception:
+        pass
 
     return user32.CallNextHookEx(kb_hook, nCode, wParam, lParam)
 
 def ms_proc(nCode, wParam, lParam):
-    if nCode == HC_ACTION and state['locked']:
-        return -1
+    try:
+        if nCode == HC_ACTION and state['locked']:
+            return -1
+    except Exception:
+        pass
     return user32.CallNextHookEx(ms_hook, nCode, wParam, lParam)
 
 # ── Sound ────────────────────────────────────────────────────────────────────
 def play_sound(kind):
-    if kind == 'lock':
-        winsound.Beep(600, 200)
-    elif kind == 'unlock':
-        winsound.Beep(1200, 150)
-        winsound.Beep(1500, 150)
-    elif kind == 'key':
-        winsound.Beep(1000, 80)
+    try:
+        if kind == 'lock':
+            winsound.Beep(600, 200)
+        elif kind == 'unlock':
+            winsound.Beep(1200, 150)
+            winsound.Beep(1500, 150)
+        elif kind == 'key':
+            winsound.Beep(1000, 80)
+    except Exception:
+        pass
 
 # ── Toggle ───────────────────────────────────────────────────────────────────
 def toggle_lock():
