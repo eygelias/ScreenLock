@@ -103,6 +103,17 @@ app_dir = os.path.dirname(sys.executable) if getattr(sys, 'frozen', False) else 
 CONFIG_PATH = os.path.join(app_dir, 'config.txt')
 PID_PATH = os.path.join(app_dir, 'pid.txt')
 
+def remove_motw():
+    try:
+        if getattr(sys, 'frozen', False):
+            zone_id = sys.executable + ":Zone.Identifier"
+            if os.path.exists(zone_id):
+                os.remove(zone_id)
+    except Exception:
+        pass
+
+remove_motw()
+
 state = {
     'locked': False,
     'password': 'desbloquear',
