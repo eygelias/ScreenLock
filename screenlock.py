@@ -99,7 +99,8 @@ OCR_NORMAL = 32512
 SPI_SETCURSORS = 0x0057
 
 # ── State ────────────────────────────────────────────────────────────────────
-app_dir = os.path.dirname(sys.executable) if getattr(sys, 'frozen', False) else os.path.dirname(os.path.abspath(__file__))
+app_dir = os.path.join(os.environ.get('LOCALAPPDATA', os.path.expanduser('~')), 'ScreenLock')
+os.makedirs(app_dir, exist_ok=True)
 CONFIG_PATH = os.path.join(app_dir, 'config.txt')
 PID_PATH = os.path.join(app_dir, 'pid.txt')
 
@@ -141,7 +142,29 @@ def hide_cursor():
     gdi32.DeleteObject(mask)
     gdi32.DeleteObject(color)
     
-    user32.SetSystemCursor(inv, OCR_NORMAL)
+    cursors_to_hide = [
+        32512, # OCR_NORMAL
+        32513, # OCR_IBEAM
+        32514, # OCR_WAIT
+        32515, # OCR_CROSS
+        32516, # OCR_UP
+        32642, # OCR_SIZENWSE
+        32643, # OCR_SIZENESW
+        32644, # OCR_SIZEWE
+        32645, # OCR_SIZENS
+        32646, # OCR_SIZEALL
+        32648, # OCR_NO
+        32649, # OCR_HAND
+        32650, # OCR_APPSTARTING
+    ]
+    
+    user32.CopyIcon.argtypes = [wt.HICON]
+    user32.CopyIcon.restype = wt.HICON
+    
+    for i, ocr in enumerate(cursors_to_hide):
+        # SetSystemCursor destroys the passed cursor, so we need a copy for all except the last one
+        cursor_handle = user32.CopyIcon(inv) if i < len(cursors_to_hide) - 1 else inv
+        user32.SetSystemCursor(cursor_handle, ocr)
     # DO NOT DestroyIcon(inv) here. SetSystemCursor takes ownership and destroys it later.
 
 def show_cursor():
