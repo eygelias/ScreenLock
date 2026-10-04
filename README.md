@@ -29,3 +29,7 @@ Si en algún momento deseas apagar ScreenLock por completo y asegurarte de que n
 
 ## 📄 Licencia
 Este proyecto es de código abierto y está disponible bajo los términos de la Licencia MIT. ¡Siéntete libre de colaborar o realizar un *fork*!
+
+
+---
+**SEO Tags:** $tags
